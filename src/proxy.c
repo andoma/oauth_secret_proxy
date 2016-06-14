@@ -26,6 +26,7 @@ proxy(http_connection_t *hc, const char *remain,
     return 403;
 
   const char *client_id = http_arg_get(&hc->hc_req_args, "client_id");
+  const char *url_id = http_arg_get(&hc->hc_args, "X-URL-ID");
   const char *secret = NULL;
   const char *url = NULL;
   if(client_id == NULL)
@@ -37,7 +38,19 @@ proxy(http_connection_t *hc, const char *remain,
       break;
     if(!strcmp(client_id, cid)) {
       secret = cfg_get_str(root, CFG("clients", CFG_INDEX(i), "secret"), NULL);
-      url = cfg_get_str(root, CFG("clients", CFG_INDEX(i), "url"), NULL);
+      if (url_id == NULL)
+        url = cfg_get_str(root, CFG("clients", CFG_INDEX(i), "url"), NULL);
+      else {
+        for(int j = 0; ; j++) {
+          const char *uid = cfg_get_str(root, CFG("clients", CFG_INDEX(i), "urls", CFG_INDEX(j), "id"), NULL);
+          if(uid == NULL)
+            break;
+          if(!strcmp(url_id, uid)) {
+            url = cfg_get_str(root, CFG("clients", CFG_INDEX(i), "urls", CFG_INDEX(j), "url"), NULL);
+            break;
+          }
+        }
+      }
       break;
     }
   }
